@@ -122,6 +122,16 @@ function serveStatic(res, staticRoot, pathname) {
   fs.createReadStream(file).pipe(res);
 }
 
+function readGeminiApiKey({ env = process.env, envFile = path.join(__dirname, '.env.local') } = {}) {
+  if (typeof env.GEMINI_API_KEY === 'string' && env.GEMINI_API_KEY.trim()) return env.GEMINI_API_KEY.trim();
+  if (!fs.existsSync(envFile)) return '';
+  const line = fs.readFileSync(envFile, 'utf8').split(/\r?\n/).find(row => /^\s*(?:export\s+)?GEMINI_API_KEY\s*=/.test(row));
+  if (!line) return '';
+  let value = line.replace(/^\s*(?:export\s+)?GEMINI_API_KEY\s*=\s*/, '').trim();
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+  return value;
+}
+
 function createElysiumServer({
   host = DEFAULT_HOST,
   port = DEFAULT_PORT,
@@ -174,11 +184,10 @@ async function main() {
   const port = Number(process.env.PORT || DEFAULT_PORT);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('PORT must be an integer from 1024 to 65535');
   const production = process.argv.includes('--production') || process.env.NODE_ENV === 'production';
-  const { createServer, loadEnv } = await import('vite');
-  const env = loadEnv(production ? 'production' : 'development', __dirname, '');
   let vite;
   let viteMiddleware;
   if (!production) {
+    const { createServer } = await import('vite');
     vite = await createServer({
       configFile: path.join(__dirname, 'vite.config.ts'),
       server: { middlewareMode: true, host },
@@ -187,7 +196,7 @@ async function main() {
     viteMiddleware = vite.middlewares;
   }
   const server = createElysiumServer({
-    host, port, apiKey: process.env.GEMINI_API_KEY || env.GEMINI_API_KEY,
+    host, port, apiKey: readGeminiApiKey(),
     mode: production ? 'production' : 'development',
     staticRoot: path.join(__dirname, 'dist'),
     viteMiddleware
@@ -208,4 +217,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createElysiumServer, validateRequest, readJsonBody, assertLoopbackHost, isAllowedOrigin, MAX_BODY_BYTES };
+module.exports = { createElysiumServer, validateRequest, readJsonBody, readGeminiApiKey, assertLoopbackHost, isAllowedOrigin, MAX_BODY_BYTES };
