@@ -63,7 +63,8 @@ test('missing key, foreign origin, and malformed payload fail closed', async t =
   });
   assert.equal(foreignOrigin.status, 403);
 
-  const invalid = await fetch(baseUrl + '/api/agent-response', {
+  const configuredBaseUrl = await withServer(t, { apiKey: 'server-only-test-key' });
+  const invalid = await fetch(configuredBaseUrl + '/api/agent-response', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...validBody, history: 'not-an-array' })
   });
   assert.equal(invalid.status, 400);
