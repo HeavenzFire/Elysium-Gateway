@@ -4,8 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
+const os = require('node:os');
 const path = require('node:path');
-const { createElysiumServer } = require('./server.cjs');
+const { createElysiumServer, readGeminiApiKey } = require('./server.cjs');
 
 async function withServer(t, options = {}) {
   const server = createElysiumServer({ host: '127.0.0.1', port: 0, mode: 'test', ...options });
@@ -98,6 +99,15 @@ test('oversized and invalid JSON bodies are rejected', async t => {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ data: 'x'.repeat(1024 * 1024 + 1) })
   });
   assert.equal(oversized.status, 413);
+});
+
+test('Gemini key loads from server environment or ignored local env file', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'elysium-env-test-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const envFile = path.join(dir, '.env.local');
+  fs.writeFileSync(envFile, 'OTHER_VALUE=ignored\nGEMINI_API_KEY="server-only-env-file-key"\n', 'utf8');
+  assert.equal(readGeminiApiKey({ env: {}, envFile }), 'server-only-env-file-key');
+  assert.equal(readGeminiApiKey({ env: { GEMINI_API_KEY: 'process-key' }, envFile }), 'process-key');
 });
 
 test('non-loopback host configuration is rejected', () => {
