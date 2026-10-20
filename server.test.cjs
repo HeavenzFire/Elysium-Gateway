@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const http = require('node:http');
 const path = require('node:path');
 const { createElysiumServer } = require('./server.cjs');
 
@@ -62,6 +63,23 @@ test('missing key, foreign origin, and malformed payload fail closed', async t =
     body: JSON.stringify(validBody)
   });
   assert.equal(foreignOrigin.status, 403);
+
+  const rebinding = await new Promise((resolve, reject) => {
+    const request = http.request(baseUrl + '/api/agent-response', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: 'http://attacker.invalid',
+        host: 'attacker.invalid'
+      }
+    }, response => {
+      response.resume();
+      response.on('end', () => resolve(response.statusCode));
+    });
+    request.on('error', reject);
+    request.end(JSON.stringify(validBody));
+  });
+  assert.equal(rebinding, 403);
 
   const configuredBaseUrl = await withServer(t, { apiKey: 'server-only-test-key' });
   const invalid = await fetch(configuredBaseUrl + '/api/agent-response', {
