@@ -1,0 +1,29 @@
+name: Elysium Gateway security
+
+on:
+  push:
+    branches:
+      - main
+      - security/server-side-gemini-proxy
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  secure-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Check server syntax and proxy tests
+        run: |
+          node --check server.cjs
+          npm test
+      - name: Build frontend
+        run: npm run build
