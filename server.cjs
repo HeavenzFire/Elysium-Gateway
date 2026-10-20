@@ -30,6 +30,14 @@ function assertLoopbackHost(host) {
   }
 }
 
+function isAllowedOrigin(origin, hostHeader) {
+  if (!origin) return true;
+  let parsed;
+  try { parsed = new URL(origin); } catch { return false; }
+  if (parsed.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)) return false;
+  return origin === 'http://' + hostHeader;
+}
+
 function sendJson(res, status, body) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -135,7 +143,7 @@ function createElysiumServer({
       if (url.pathname === '/api/agent-response') {
         if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
         const origin = req.headers.origin;
-        if (origin && origin !== 'http://' + req.headers.host) {
+        if (!isAllowedOrigin(origin, req.headers.host)) {
           return sendJson(res, 403, { ok: false, error: 'origin_not_allowed' });
         }
         if (!apiKey) return sendJson(res, 503, { ok: false, error: 'gemini_api_key_not_configured' });
@@ -200,4 +208,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createElysiumServer, validateRequest, readJsonBody, assertLoopbackHost, MAX_BODY_BYTES };
+module.exports = { createElysiumServer, validateRequest, readJsonBody, assertLoopbackHost, isAllowedOrigin, MAX_BODY_BYTES };
