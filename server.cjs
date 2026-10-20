@@ -166,10 +166,11 @@ async function main() {
   const port = Number(process.env.PORT || DEFAULT_PORT);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('PORT must be an integer from 1024 to 65535');
   const production = process.argv.includes('--production') || process.env.NODE_ENV === 'production';
+  const { createServer, loadEnv } = await import('vite');
+  const env = loadEnv(production ? 'production' : 'development', __dirname, '');
   let vite;
   let viteMiddleware;
   if (!production) {
-    const { createServer } = await import('vite');
     vite = await createServer({
       configFile: path.join(__dirname, 'vite.config.ts'),
       server: { middlewareMode: true, host },
@@ -178,7 +179,7 @@ async function main() {
     viteMiddleware = vite.middlewares;
   }
   const server = createElysiumServer({
-    host, port, apiKey: process.env.GEMINI_API_KEY,
+    host, port, apiKey: process.env.GEMINI_API_KEY || env.GEMINI_API_KEY,
     mode: production ? 'production' : 'development',
     staticRoot: path.join(__dirname, 'dist'),
     viteMiddleware
