@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server.cjs",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1",
+    "preview": "node server.cjs --production",
     "start": "node server.cjs --production",
     "test": "node --test server.test.cjs"
   },
