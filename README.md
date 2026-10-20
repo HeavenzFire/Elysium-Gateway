@@ -8,6 +8,10 @@ This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1HgTMVzMUKxV4lxCX8SdMwJGIJVs3jmz7
 
+## Security boundary
+
+Gemini API calls are made by the local Node server, not directly from browser code. Keep `GEMINI_API_KEY` in the ignored `.env.local` file or server process environment; it is read server-side and is not injected into the Vite client bundle. The app binds to `127.0.0.1` by default and rejects non-loopback host configuration. Do not expose the service directly to a LAN or internet; use an authenticated reverse proxy if remote access is required.
+
 ## Run Locally
 
 **Prerequisites:**  Node.js
