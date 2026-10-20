@@ -1,28 +1,6 @@
-import { GoogleGenAI, Content } from "@google/genai";
-import { Message, AgentName } from "../types";
+import { Message } from "../types";
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
-const modelConfig = {
-  temperature: 0.7,
-  topP: 0.95,
-  topK: 64,
-  maxOutputTokens: 8192,
-};
-
-// Converts our app's message format to Gemini's content format
-const buildHistory = (messages: Message[]): Content[] => {
-  return messages.map((msg) => ({
-    role: msg.sender === AgentName.USER ? 'user' : 'model',
-    parts: [{ text: msg.text }],
-  }));
-};
+type AgentResponse = { ok?: boolean; text?: string; error?: string };
 
 export const getAgentResponse = async (
   history: Message[],
@@ -30,23 +8,19 @@ export const getAgentResponse = async (
   agentPrompt: string
 ): Promise<string> => {
   try {
-    const fullHistory = buildHistory(history);
-    
-    // Add the specific prompt for this agent's turn
-    const contents = [...fullHistory, { role: 'user', parts: [{ text: agentPrompt }] }];
-    
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: contents,
-      config: {
-        ...modelConfig,
-        systemInstruction: systemInstruction,
-      },
+    const response = await fetch('/api/agent-response', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ history, systemInstruction, agentPrompt }),
     });
-    
-    return response.text;
-  } catch (error) {
-    console.error("Error getting response from Gemini API:", error);
-    return "An error occurred while communicating with the AI. Please check the console.";
+    const data = await response.json().catch(() => ({} as AgentResponse)) as AgentResponse;
+    if (!response.ok || data.ok !== true || typeof data.text !== 'string') {
+      console.error('Elysium Gateway provider proxy failed with HTTP ' + response.status);
+      return 'An error occurred while communicating with the AI. Please check the server configuration.';
+    }
+    return data.text;
+  } catch {
+    console.error('Elysium Gateway provider proxy is unavailable.');
+    return 'An error occurred while communicating with the AI. Please check the server configuration.';
   }
 };
