@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elysium Gateway</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1020">
+    <meta name="description" content="HeavenzFire Network — an Android-first command center for a user-controlled device network.">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <title>HeavenzFire Network · Elysium Gateway</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script type="importmap">
@@ -20,5 +23,10 @@
 <body class="bg-gray-900 text-gray-100">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      if ("serviceWorker" in navigator && location.protocol === "https:") {
+        window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch((error) => console.warn("Service worker registration failed", error)));
+      }
+    </script>
 </body>
 </html>
