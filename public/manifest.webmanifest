@@ -1,0 +1,11 @@
+{
+  "name": "HeavenzFire Network",
+  "short_name": "HF Network",
+  "description": "Android-first command center for your user-controlled device network.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "orientation": "portrait-primary"
+}
