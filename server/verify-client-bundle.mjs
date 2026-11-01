@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 const root = path.resolve('dist');
-const forbidden = ['process.env.API_KEY', 'process.env.GEMINI_API_KEY', 'GEMINI_API_KEY'];
+const forbidden = [/process\.env\.API_KEY/, /process\.env\.GEMINI_API_KEY/, /AIza[0-9A-Za-z_-]{30,}/];
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
   const files = [];
@@ -14,6 +14,6 @@ async function walk(dir) {
 }
 for (const file of await walk(root)) {
   const content = await readFile(file, 'utf8').catch(() => '');
-  for (const marker of forbidden) if (content.includes(marker)) throw Error('server credential reference found in client bundle: ' + file);
+  for (const pattern of forbidden) if (pattern.test(content)) throw Error('possible credential leaked into client bundle: ' + file);
 }
-process.stdout.write('Client bundle secret scan passed.\\n');
+process.stdout.write('Client bundle secret scan passed.\n');
