@@ -1,12 +1,14 @@
 {
   "name": "elysium-gateway",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node server/index.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "node server/index.mjs --production",
+    "test": "node --test server/gemini-api.test.mjs",
+    "verify:bundle": "node server/verify-client-bundle.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",
