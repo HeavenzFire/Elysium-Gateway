@@ -2,7 +2,7 @@ import { createServer as createHttpServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createServer as createViteServer } from 'vite';
+import { createServer as createViteServer, loadEnv } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createAgentHandler } from './gemini-api.mjs';
 
@@ -12,7 +12,8 @@ const production = process.argv.includes('--production');
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 3000);
 if (!['127.0.0.1', 'localhost', '::1'].includes(host)) throw Error('Remote binding is disabled until authenticated device enrollment is implemented. Use HOST=127.0.0.1.');
-const apiKey = process.env.GEMINI_API_KEY || '';
+const fileEnv = loadEnv(production ? 'production' : 'development', root, '');
+const apiKey = process.env.GEMINI_API_KEY || fileEnv.GEMINI_API_KEY || '';
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 const agentHandler = createAgentHandler({ ai, apiKey });
 const vite = production ? null : await createViteServer({ configFile: path.join(root, 'vite.config.ts'), root, server: { middlewareMode: true }, appType: 'spa' });
