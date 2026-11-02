@@ -1,28 +1,4 @@
-import { GoogleGenAI, Content } from "@google/genai";
-import { Message, AgentName } from "../types";
-
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
-const modelConfig = {
-  temperature: 0.7,
-  topP: 0.95,
-  topK: 64,
-  maxOutputTokens: 8192,
-};
-
-// Converts our app's message format to Gemini's content format
-const buildHistory = (messages: Message[]): Content[] => {
-  return messages.map((msg) => ({
-    role: msg.sender === AgentName.USER ? 'user' : 'model',
-    parts: [{ text: msg.text }],
-  }));
-};
+import { Message } from "../types";
 
 export const getAgentResponse = async (
   history: Message[],
@@ -30,23 +6,20 @@ export const getAgentResponse = async (
   agentPrompt: string
 ): Promise<string> => {
   try {
-    const fullHistory = buildHistory(history);
-    
-    // Add the specific prompt for this agent's turn
-    const contents = [...fullHistory, { role: 'user', parts: [{ text: agentPrompt }] }];
-    
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: contents,
-      config: {
-        ...modelConfig,
-        systemInstruction: systemInstruction,
-      },
+    const response = await fetch("/api/agent", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({ history, systemInstruction, agentPrompt }),
     });
-    
-    return response.text;
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const reason = typeof result.error === "string" ? result.error : "provider_request_failed";
+      throw new Error(reason);
+    }
+    return typeof result.text === "string" ? result.text : "";
   } catch (error) {
-    console.error("Error getting response from Gemini API:", error);
-    return "An error occurred while communicating with the AI. Please check the console.";
+    console.error("Elysium Gateway request failed:", error);
+    return "The local gateway could not complete this request. Check that the server is running and GEMINI_API_KEY is configured on the server.";
   }
 };
